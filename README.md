@@ -33,7 +33,7 @@ pi -e git:git.ipao.vip:rogee/pi-siyuan
 
 ```bash
 git clone git@git.ipao.vip:rogee/pi-siyuan.git ~/.pi/agent/extensions/pi-siyuan
-# src/ 内含 index.ts，pi 会自动加载 extensions/*/index.ts
+# 包根目录含 index.ts，pi 会自动加载 extensions/*/index.ts
 ```
 
 发布流程：推送 tag（如 `v0.1.0`）触发 Gitea workflow 自动发布到 npm（`.gitea/workflows/publish-npm.yml`，使用仓库 secret `NPM_PACKAGE_TOKEN`）。
@@ -48,7 +48,7 @@ export SIYUAN_API_URL="https://your-siyuan-host"   # 默认 http://127.0.0.1:680
 export SIYUAN_TOKEN="your-api-token"               # SiYuan 设置 → 关于 → API token
 ```
 
-缺失时回落到 `~/.pi/agent/extensions/pi-siyuan/config.json`：
+修改 `~/.zshenv` 后需新开 shell 并重启 Pi（已有进程不会自动获得新环境变量）。缺失时回落到 `~/.pi/agent/extensions/pi-siyuan/config.json`：
 
 ```json
 {
