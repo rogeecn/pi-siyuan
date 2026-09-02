@@ -25,5 +25,18 @@
   },
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "0.84.4"
-  }
+  },
+  "main": "src/index.ts",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE",
+    "AGENTS.md",
+    "!src/*.test.ts"
+  ],
+  "author": "rogee",
+  "scripts": {
+    "check": "node --experimental-strip-types --no-warnings src/audit.test.ts"
+  },
+  "prepublishOnly": "node --experimental-strip-types --no-warnings src/audit.test.ts"
 }

@@ -13,26 +13,30 @@
 
 ## 安装
 
-### 方式一：pi install（推荐）
+### 方式一：npm（推荐）
 
 ```bash
-pi install git:git.ipao.vip:rogee/pi-siyuan
-# 或 HTTPS：
-pi install https://git.ipao.vip/rogee/pi-siyuan
+pi install npm:pi-siyuan
+# 或试用不落盘：
+pi -e npm:pi-siyuan
 ```
 
-试用不落盘：
+### 方式二：git（Gitea）
 
 ```bash
+pi install ssh://git@git.ipao.vip/rogee/pi-siyuan
+# 或试用不落盘：
 pi -e git:git.ipao.vip:rogee/pi-siyuan
 ```
 
-### 方式二：手动放置
+### 方式三：手动放置
 
 ```bash
 git clone git@git.ipao.vip:rogee/pi-siyuan.git ~/.pi/agent/extensions/pi-siyuan
 # src/ 内含 index.ts，pi 会自动加载 extensions/*/index.ts
 ```
+
+发布流程：推送 tag（如 `v0.1.0`）触发 Gitea workflow 自动发布到 npm（`.gitea/workflows/publish-npm.yml`，使用仓库 secret `NPM_PACKAGE_TOKEN`）。
 
 ## 配置
 
