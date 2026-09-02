@@ -422,11 +422,16 @@ export default function siyuanExtension(pi: ExtensionAPI) {
 		},
 	});
 
-	// 初始只激活 loader（渐进式披露）
-	pi.on("session_start", () => {
+	// 初始只激活 loader（渐进式披露），并同步笔记本权限配置
+	pi.on("session_start", async () => {
 		const initial = pi
 			.getActiveTools()
 			.filter((name) => !SIYUAN_TOOL_NAMES.has(name));
 		pi.setActiveTools([...new Set([...initial, "siyuan_discover"])]);
+		try {
+			syncNotebooks(cfg, await client.lsNotebooks());
+		} catch {
+			// SiYuan 离线不应阻止 Pi 启动；工具调用时会返回连接错误
+		}
 	});
 }

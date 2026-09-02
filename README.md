@@ -8,7 +8,7 @@
 - **渐进式披露**：初始仅激活一个 `siyuan_discover` loader 工具（含连通性检查），其余 15 个工具按需增量加载，保持系统提示词前缀稳定
 - **笔记本级 RWD 权限审计**：R 读 / W 写 / D 破坏性（rollback、move 移出、删除类），可自由组合；`NONE` = 禁止一切操作
 - 拒绝消息包含：目标笔记本（id+name）、需要的权限、缺失的权限、被拒绝的操作名
-- 新笔记本自动以 `R` 权限同步进配置文件（发现入口 `list_notebooks`，审计豁免）
+- Pi 启动及调用 `list_notebooks` 时自动同步笔记本；新笔记本以 `R` 权限写入配置文件（审计豁免）
 - 连接信息：环境变量优先，配置文件兜底
 
 ## 安装
@@ -64,7 +64,7 @@ export SIYUAN_TOKEN="your-api-token"               # SiYuan 设置 → 关于 �
 
 - `permissions`：`R`/`W`/`D` 自由组合，或 `["NONE"]`（禁止一切操作）
 - `name` 仅做 human-readable，一切逻辑按 `id` 匹配
-- 首次调用 `list_notebooks` 会把未记录的笔记本以 `["R"]` 补写进该文件
+- Pi 启动时会创建该配置文件并同步笔记本；调用 `list_notebooks` 时也会再次同步。未记录的笔记本以 `["R"]` 补写，已有笔记本名称变化时更新 `name`
 
 ### 权限规则速查
 

@@ -4,12 +4,14 @@
  */
 
 import assert from "node:assert";
+import { existsSync, rmSync } from "node:fs";
 import {
 	permsOf,
 	auditNotebook,
 	auditAny,
 	auditAll,
 	denyMessage,
+	loadConfig,
 	syncNotebooks,
 } from "./audit.ts";
 
@@ -86,6 +88,19 @@ assert.ok(
 );
 assert.ok(msg.includes("get_document_content"), "含操作名");
 assert.ok(/需要 R/.test(msg) && /缺失 R/.test(msg), "含需要/缺失权限");
+
+// ---- 配置首次加载自动初始化 ----
+const initDir = "/tmp/pi-siyuan-audit-test";
+const initPath = `${initDir}/nested/config.json`;
+rmSync(initDir, { recursive: true, force: true });
+const initialized = loadConfig(initPath);
+assert.equal(existsSync(initPath), true, "配置文件应在首次加载时创建");
+assert.deepEqual(initialized, {
+	apiUrl: "http://127.0.0.1:6806",
+	token: "",
+	notebooks: [],
+});
+rmSync(initDir, { recursive: true, force: true });
 
 // ---- syncNotebooks（第 10 条）— 用临时路径，不污染真实配置 ----
 const cfg: any = {

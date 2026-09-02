@@ -5,8 +5,8 @@
   "dependencies": {
     "typebox": "1.3.7"
   },
-  "version": "0.1.2",
-  "description": "SiYuan Note extension for pi coding agent \u2014 HTTP API wrapper with notebook-level RWD permission auditing",
+  "version": "0.1.3",
+  "description": "SiYuan Note extension for pi coding agent — HTTP API wrapper with notebook-level RWD permission auditing",
   "keywords": [
     "pi-package",
     "pi-extension",

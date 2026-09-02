@@ -5,7 +5,7 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { SiYuanClient } from "./siyuan-client.ts";
 
 export type Perm = "R" | "W" | "D";
@@ -86,7 +86,13 @@ export function loadConfig(cfgPath: string = CONFIG_PATH): PiSiyuanConfig {
 			// 损坏则重建
 		}
 	}
-	return { apiUrl: "", token: "", notebooks: [] };
+	const cfg = {
+		apiUrl: "http://127.0.0.1:6806",
+		token: "",
+		notebooks: [],
+	};
+	saveConfig(cfg, cfgPath);
+	return cfg;
 }
 
 export function resolveConnection(): { apiUrl: string; token: string } {
@@ -121,9 +127,7 @@ export function syncNotebooks(
 }
 
 export function saveConfig(cfg: PiSiyuanConfig, cfgPath: string = CONFIG_PATH) {
-	mkdirSync(join(homedir(), ".pi/agent/extensions/pi-siyuan"), {
-		recursive: true,
-	});
+	mkdirSync(dirname(cfgPath), { recursive: true });
 	writeFileSync(cfgPath, JSON.stringify(cfg, null, 2) + "\n");
 }
 
