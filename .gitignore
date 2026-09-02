@@ -1,0 +1,26 @@
+# 依赖
+node_modules/
+
+# pi-lens 索引缓存
+.codegraph/
+.pi-lens/
+
+# 参考仓库的调研材料（本地工作文件，不发布）
+siyuan-mcp-README-reference.md
+*-reference*.md
+
+# 测试临时文件
+/tmp/
+*.tmp
+pi-siyuan-audit-test-config.json
+
+# 环境与密钥（config.json 含 token，用户本地生成，绝不提交）
+config.json
+*.local.json
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
