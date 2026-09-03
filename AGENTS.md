@@ -43,3 +43,5 @@ permissions 取值为 R / W / D 的自由组合，或仅为 ["NONE"]。name 仅�
 11、把 15 个工具全部映射进 extension，工具名与 siyuan-mcp 保持一致：unified_search、get_document_content、create_document、append_to_document、update_document、move_documents、get_document_tree、append_to_daily_note、list_notebooks、get_recently_updated_documents、create_snapshot、list_snapshots、rollback_to_snapshot、list_all_tags、batch_replace_tag。
 
 12、留一个审计逻辑的最小自检（纯函数测试权限矩阵判定即可，不需要 mock HTTP）。
+
+13、（2026-09-04 补充）发布图文文章需要图片上传能力，新增第 16 个工具 `upload_asset`（不在 siyuan-mcp 工具集内，为 pi-siyuan 扩展）：读本地文件列表 → POST /api/asset/upload（multipart 字段名 **file[]**，files/files[] 会被该部署反代吞成空 succMap）→ 返回 succMap 原文件名→assets/ 路径。审计：目标笔记本需 W。上传后把返回的 assets/ 路径填进 create_document 的 Markdown 图片链接。code:0 + 空 succMap 视为失败必须报错（该部署字段名回归时的静默失败症状）。

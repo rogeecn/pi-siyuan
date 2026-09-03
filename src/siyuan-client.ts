@@ -130,6 +130,40 @@ export class SiYuanClient {
 		return { docId, created: true };
 	}
 
+	// ---- 附件 ----
+
+	/**
+	 * 上传图片/附件（/api/asset/upload）。
+	 * 该部署实测契约：multipart 字段名必须是 file[]（files/files[] 会被吞成空 succMap，
+	 * SiYuan v3.8.2 kernel/model/upload.go: form.File["file[]"]），无 Authorization 401。
+	 * 响应 {errFiles, succFiles:[{index,name,path}], succMap:{原名: "assets/新名"}}。
+	 */
+	async uploadAssets(
+		files: Array<{ name: string; data: Uint8Array; mime?: string }>,
+	): Promise<{ errFiles: string[]; succMap: Record<string, string> }> {
+		if (!files.length)
+			throw new SiYuanError("uploadAssets: 文件列表为空");
+		const fd = new FormData();
+		for (const f of files) {
+			fd.append(
+				"file[]",
+				new Blob([f.data], {
+					type: f.mime || "application/octet-stream",
+				}),
+				f.name,
+			);
+		}
+		const d = await this.callForm("/api/asset/upload", fd);
+		const errFiles: string[] = d?.errFiles ?? [];
+		const succMap: Record<string, string> = d?.succMap ?? {};
+		// 字段名回归/反代吞 body 时的症状就是 code:0 + 空 succMap —— 静默失败，必须显式报错
+		if (!Object.keys(succMap).length && !errFiles.length)
+			throw new SiYuanError(
+				"上传返回空 succMap（文件未落库）：疑似 multipart 字段名回归或反代吞掉 body，当前字段名 file[]",
+			);
+		return { errFiles, succMap };
+	}
+
 	// ---- 搜索（fulltext 端点被吞，用 SQL）----
 
 	async searchContent(query: string, limit: number): Promise<any[]> {
@@ -181,16 +215,30 @@ export class SiYuanClient {
 	}
 
 	private async call(path: string, body: unknown): Promise<any> {
+		return this.callRaw(
+			path,
+			{ "Content-Type": "application/json" },
+			JSON.stringify(body),
+		);
+	}
+
+	private async callForm(path: string, body: FormData): Promise<any> {
+		// FormData 由 fetch 自动生成含 boundary 的 Content-Type
+		return this.callRaw(path, {}, body);
+	}
+
+	private async callRaw(
+		path: string,
+		extraHeaders: Record<string, string>,
+		body?: BodyInit,
+	): Promise<any> {
 		let res: Response;
 		try {
 			res = await fetch(this.apiUrl + path, {
 				method: "POST",
-				headers: {
-					Authorization: `Token ${this.token}`,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(body),
-				signal: AbortSignal.timeout(30000),
+				headers: { Authorization: `Token ${this.token}`, ...extraHeaders },
+				body,
+				signal: AbortSignal.timeout(120000),
 			});
 		} catch (e: any) {
 			throw new SiYuanError(`连接 SiYuan 失败 (${this.apiUrl}): ${e.message}`);

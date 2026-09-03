@@ -4,7 +4,7 @@
  * 架构（AGENTS.md 第 5 条）：直接封装 SiYuan HTTP API + 权限审计层。
  * 工具划分与参数设计参考 porkll/siyuan-mcp，不依赖其代码。
  *
- * 渐进式披露（goal 4）：15 个工具全部 registerTool 注册，
+ * 渐进式披露（goal 4）：16 个工具全部 registerTool 注册，
  * 但初始只激活 siyuan_discover 一个 loader 工具；
  * loader 按需 setActiveTools 增量激活匹配的工具。
  *
@@ -12,6 +12,8 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { readFileSync } from "node:fs";
+import { basename } from "node:path";
 import { Type } from "typebox";
 import { SiYuanClient } from "./siyuan-client.ts";
 import {
@@ -23,7 +25,8 @@ import {
 	type PiSiyuanConfig,
 } from "./audit.ts";
 
-// 15 个工具名（AGENTS.md 第 11 条，与 porkll/siyuan-mcp 一致）
+// 16 个工具名（AGENTS.md 第 11 条 + 第 13 条；前 15 个与 porkll/siyuan-mcp 一致，
+// upload_asset 为 pi-siyuan 扩展：发布图文文章所需的图片/附件上传）
 const SIYUAN_TOOL_NAMES = new Set([
 	"unified_search",
 	"get_document_content",
@@ -40,6 +43,7 @@ const SIYUAN_TOOL_NAMES = new Set([
 	"rollback_to_snapshot",
 	"list_all_tags",
 	"batch_replace_tag",
+	"upload_asset",
 ]);
 
 interface ToolDeps {
@@ -95,7 +99,7 @@ export default function siyuanExtension(pi: ExtensionAPI) {
 		};
 	}
 
-	// ============ 15 个工具（第 11 条） ============
+	// ============ 16 个工具（第 11/13 条） ============
 
 	pi.registerTool({
 		name: "list_notebooks",
@@ -375,11 +379,68 @@ export default function siyuanExtension(pi: ExtensionAPI) {
 
 	// ============ 渐进式披露 loader（goal 4） ============
 
+	const ASSET_MIME: Record<string, string> = {
+		png: "image/png",
+		jpg: "image/jpeg",
+		jpeg: "image/jpeg",
+		gif: "image/gif",
+		webp: "image/webp",
+		svg: "image/svg+xml",
+		pdf: "application/pdf",
+		mp3: "audio/mpeg",
+		mp4: "video/mp4",
+	};
+
+	pi.registerTool({
+		name: "upload_asset",
+		label: "Upload Asset",
+		description:
+			"上传本地图片/附件到 SiYuan assets（发布图文文章用；需目标笔记本 W 权限）。返回 succMap：原文件名 → assets/ 路径，可直接作为 create_document/append_to_document 里 Markdown 图片链接。一次最多 50 个文件。",
+		parameters: Type.Object({
+			notebook: Type.String({ description: "目标笔记本 ID（审计 W）" }),
+			paths: Type.Array(Type.String(), {
+				description: "本地文件路径列表（相对当前目录或绝对路径）",
+			}),
+	}),
+		execute: audited("upload_asset", async (p) => {
+			deps.auditor.auditNotebookId(p.notebook, ["W"], "upload_asset");
+			if (!p.paths.length) return fail(new Error("paths 不能为空"));
+			if (p.paths.length > 50)
+				return fail(new Error("一次最多上传 50 个文件"));
+			const files: Array<{ name: string; data: Uint8Array; mime?: string }> = [];
+			for (const path of p.paths) {
+				let data: Buffer;
+				try {
+					data = readFileSync(path);
+				} catch {
+					return fail(new Error(`读取文件失败：${path}`));
+				}
+				const ext = basename(path).split(".").pop()?.toLowerCase() ?? "";
+				files.push({
+					name: basename(path),
+					data: new Uint8Array(data),
+					mime: ASSET_MIME[ext],
+				});
+			}
+			const r = await client.uploadAssets(files);
+			const lines = Object.entries(r.succMap).map(
+				([name, url]) => `${name} → ${url}`,
+			);
+			if (r.errFiles.length)
+				lines.push(`失败：${r.errFiles.join(", ")}`);
+			return ok(
+				`上传成功 ${Object.keys(r.succMap).length}/${files.length}${r.errFiles.length ? `，失败 ${r.errFiles.length}` : ""}：\n` +
+					lines.join("\n"),
+				{ succMap: r.succMap, errFiles: r.errFiles },
+			);
+		}),
+	});
+
 	pi.registerTool({
 		name: "siyuan_discover",
 		label: "SiYuan Discover",
 		description:
-			"搜索并激活 SiYuan 笔记工具（15 个工具按需加载）。输入能力关键词（如 search / read / write / snapshot / tag / notebook / move / daily）。",
+			"搜索并激活 SiYuan 笔记工具（16 个工具按需加载）。输入能力关键词（如 search / read / write / upload / image / snapshot / tag / notebook / move / daily）。",
 		promptSnippet: "操作 SiYuan 笔记时先用 siyuan_discover 激活对应工具",
 		parameters: Type.Object({
 			query: Type.Optional(

@@ -4,8 +4,8 @@
 
 ## 特性
 
-- **15 个工具**，与 siyuan-mcp 同名：`unified_search`、`get_document_content`、`create_document`、`append_to_document`、`update_document`、`move_documents`、`get_document_tree`、`append_to_daily_note`、`list_notebooks`、`get_recently_updated_documents`、`create_snapshot`、`list_snapshots`、`rollback_to_snapshot`、`list_all_tags`、`batch_replace_tag`
-- **渐进式披露**：初始仅激活一个 `siyuan_discover` loader 工具（含连通性检查），其余 15 个工具按需增量加载，保持系统提示词前缀稳定
+- **16 个工具**：前 15 个与 siyuan-mcp 同名（`unified_search`、`get_document_content`、`create_document`、`append_to_document`、`update_document`、`move_documents`、`get_document_tree`、`append_to_daily_note`、`list_notebooks`、`get_recently_updated_documents`、`create_snapshot`、`list_snapshots`、`rollback_to_snapshot`、`list_all_tags`、`batch_replace_tag`），外加 `upload_asset`（上传本地图片/附件，multipart 字段名 `file[]`，需目标笔记本 W；返回 `succMap` 原文件名 → `assets/` 路径，可直接填进 Markdown 图片链接，用于发布图文文章）
+- **渐进式披露**：初始仅激活一个 `siyuan_discover` loader 工具（含连通性检查），其余 16 个工具按需增量加载，保持系统提示词前缀稳定
 - **笔记本级 RWD 权限审计**：R 读 / W 写 / D 破坏性（rollback、move 移出、删除类），可自由组合；`NONE` = 禁止一切操作
 - 拒绝消息包含：目标笔记本（id+name）、需要的权限、缺失的权限、被拒绝的操作名
 - Pi 启动及调用 `list_notebooks` 时自动同步笔记本；新笔记本以 `R` 权限写入配置文件（审计豁免）
